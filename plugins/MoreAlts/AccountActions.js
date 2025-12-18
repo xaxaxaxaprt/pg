@@ -316,25 +316,39 @@ const addAccountWithCredentials = async (storage, email, password, setEmail, set
   try {
     // If we have an MFA ticket, complete 2FA
     if (mfaTicket && mfaCode) {
-      addLog('info', 'Completing 2FA verification');
+      addLog('info', 'Completing 2FA verification', { codeLength: mfaCode.length });
+      
+      const cleanCode = mfaCode.trim().replace(/\s/g, '').replace(/-/g, '');
       
       const mfaResponse = await fetch("https://discord.com/api/v9/auth/mfa/totp", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "X-Super-Properties": "eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6ImVuLVVTIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEyMC4wLjAuMCBTYWZhcmkvNTM3LjM2IiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTIwLjAuMC4wIiwib3NfdmVyc2lvbiI6IjEwIiwicmVmZXJyZXIiOiIiLCJyZWZlcnJpbmdfZG9tYWluIjoiIiwicmVmZXJyZXJfY3VycmVudCI6IiIsInJlZmVycmluZ19kb21haW5fY3VycmVudCI6IiIsInJlbGVhc2VfY2hhbm5lbCI6InN0YWJsZSIsImNsaWVudF9idWlsZF9udW1iZXIiOjI1NTkyMSwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbH0="
         },
         body: JSON.stringify({
-          code: mfaCode.trim().replace(/\s/g, ''),
+          code: cleanCode,
           ticket: mfaTicket
         })
       });
 
       const mfaData = await mfaResponse.json();
+      addLog('debug', '2FA response', { status: mfaResponse.status, hasToken: !!mfaData.token, message: mfaData.message });
       
       if (!mfaResponse.ok || !mfaData.token) {
-        addLog('error', '2FA verification failed', { status: mfaResponse.status, message: mfaData.message });
-        showToast(mfaData.message || "Invalid 2FA code", 1);
+        addLog('error', '2FA verification failed', { status: mfaResponse.status, message: mfaData.message, code: mfaData.code });
+        
+        let errorMsg = "Invalid 2FA code";
+        if (mfaData.message) {
+          errorMsg = mfaData.message;
+        } else if (mfaData.code === 60008) {
+          errorMsg = "Invalid 2FA code - check your authenticator";
+        } else if (mfaData.code === 60002) {
+          errorMsg = "2FA ticket expired - try again";
+        }
+        
+        showToast(errorMsg, 1);
         setIsAddingDynamic(false);
         return;
       }
@@ -351,11 +365,13 @@ const addAccountWithCredentials = async (storage, email, password, setEmail, set
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "X-Super-Properties": "eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6ImVuLVVTIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEyMC4wLjAuMCBTYWZhcmkvNTM3LjM2IiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTIwLjAuMC4wIiwib3NfdmVyc2lvbiI6IjEwIiwicmVmZXJyZXIiOiIiLCJyZWZlcnJpbmdfZG9tYWluIjoiIiwicmVmZXJyZXJfY3VycmVudCI6IiIsInJlZmVycmluZ19kb21haW5fY3VycmVudCI6IiIsInJlbGVhc2VfY2hhbm5lbCI6InN0YWJsZSIsImNsaWVudF9idWlsZF9udW1iZXIiOjI1NTkyMSwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbH0="
         },
         body: JSON.stringify({
           login: email.trim(),
-          password: password.trim()
+          password: password.trim(),
+          undelete: false
         })
       });
 
