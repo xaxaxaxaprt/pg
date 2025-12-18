@@ -745,15 +745,15 @@ export default function AccountsManager(props) {
         React.createElement(ReactNative.Text, {
           key: "mfa-desc",
           style: { color: '#8e9297', fontSize: 14, textAlign: 'center', marginBottom: 24 }
-        }, "Enter the 6-digit code from your authenticator app"),
+        }, "Enter 6-digit code from authenticator or 8-digit backup code"),
         React.createElement(ReactNative.TextInput, {
           key: "mfa-input",
           placeholder: "000000",
           placeholderTextColor: '#72767d',
           value: mfaCode,
           onChangeText: setMfaCode,
-          keyboardType: 'number-pad',
-          maxLength: 6,
+          keyboardType: 'default',
+          maxLength: 8,
           style: {
             backgroundColor: '#1a1b1e',
             color: 'white',
@@ -770,9 +770,9 @@ export default function AccountsManager(props) {
         React.createElement(ReactNative.TouchableOpacity, {
           key: "mfa-submit",
           onPress: submitMfaCode,
-          disabled: mfaCode.length !== 6 || isAddingDynamic,
+          disabled: (mfaCode.length !== 6 && mfaCode.length !== 8) || isAddingDynamic,
           style: {
-            backgroundColor: mfaCode.length === 6 ? '#5865f2' : '#3f4147',
+            backgroundColor: (mfaCode.length === 6 || mfaCode.length === 8) ? '#5865f2' : '#3f4147',
             paddingVertical: 14,
             borderRadius: 12,
             alignItems: 'center',

@@ -316,16 +316,29 @@ const addAccountWithCredentials = async (storage, email, password, setEmail, set
   try {
     // If we have an MFA ticket, complete 2FA
     if (mfaTicket && mfaCode) {
-      addLog('info', 'Completing 2FA verification', { codeLength: mfaCode.length });
-      
       const cleanCode = mfaCode.trim().replace(/\s/g, '').replace(/-/g, '');
+      addLog('info', 'Completing 2FA verification', { 
+        codeLength: cleanCode.length, 
+        ticketLength: mfaTicket?.length,
+        ticketStart: mfaTicket?.substring(0, 20)
+      });
       
-      const mfaResponse = await fetch("https://discord.com/api/v9/auth/mfa/totp", {
+      // Determine if this is a backup code (8 chars) or TOTP (6 chars)
+      const isBackupCode = cleanCode.length === 8;
+      const endpoint = isBackupCode 
+        ? "https://discord.com/api/v9/auth/mfa/backup" 
+        : "https://discord.com/api/v9/auth/mfa/totp";
+      
+      addLog('debug', 'MFA request details', { 
+        endpoint: isBackupCode ? 'backup' : 'totp',
+        codeToSend: cleanCode
+      });
+
+      const mfaResponse = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "X-Super-Properties": "eyJvcyI6IldpbmRvd3MiLCJicm93c2VyIjoiQ2hyb21lIiwiZGV2aWNlIjoiIiwic3lzdGVtX2xvY2FsZSI6ImVuLVVTIiwiYnJvd3Nlcl91c2VyX2FnZW50IjoiTW96aWxsYS81LjAgKFdpbmRvd3MgTlQgMTAuMDsgV2luNjQ7IHg2NCkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzEyMC4wLjAuMCBTYWZhcmkvNTM3LjM2IiwiYnJvd3Nlcl92ZXJzaW9uIjoiMTIwLjAuMC4wIiwib3NfdmVyc2lvbiI6IjEwIiwicmVmZXJyZXIiOiIiLCJyZWZlcnJpbmdfZG9tYWluIjoiIiwicmVmZXJyZXJfY3VycmVudCI6IiIsInJlZmVycmluZ19kb21haW5fY3VycmVudCI6IiIsInJlbGVhc2VfY2hhbm5lbCI6InN0YWJsZSIsImNsaWVudF9idWlsZF9udW1iZXIiOjI1NTkyMSwiY2xpZW50X2V2ZW50X3NvdXJjZSI6bnVsbH0="
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
         body: JSON.stringify({
           code: cleanCode,
