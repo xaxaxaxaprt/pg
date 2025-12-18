@@ -303,82 +303,127 @@ const forceLogout = async () => {
   });
 };
 
-const addAccountWithCredentials = async (storage, email, password, setEmail, setPassword, setShowAddDialog, setIsAddingDynamic) => {
-  if (!email.trim() || !password.trim()) {
+const addAccountWithCredentials = async (storage, email, password, setEmail, setPassword, setShowAddDialog, setIsAddingDynamic, mfaCode = null, mfaTicket = null, setMfaTicket = null, setShowMfaDialog = null) => {
+  if (!mfaTicket && (!email.trim() || !password.trim())) {
     showToast("Please enter both email and password", 1);
     return;
   }
 
   setIsAddingDynamic(true);
-  addLog('info', 'Starting credential-based account addition', { email: email.trim() });
   
-  try {
-    const response = await fetch("https://discord.com/api/v9/auth/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-      },
-      body: JSON.stringify({
-        login: email.trim(),
-        password: password.trim()
-      })
-    });
+  let token = null;
 
-    const loginData = await response.json();
-    
-    if (!response.ok || !loginData.token) {
-      addLog('error', 'Discord login failed', { 
-        status: response.status, 
-        message: loginData.message,
-        errors: loginData.errors,
-        captchaRequired: !!loginData.captcha_key
+  try {
+    // If we have an MFA ticket, complete 2FA
+    if (mfaTicket && mfaCode) {
+      addLog('info', 'Completing 2FA verification');
+      
+      const mfaResponse = await fetch("https://discord.com/api/v9/auth/mfa/totp", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        },
+        body: JSON.stringify({
+          code: mfaCode.trim().replace(/\s/g, ''),
+          ticket: mfaTicket
+        })
       });
+
+      const mfaData = await mfaResponse.json();
       
-      let errorMessage = "Login failed";
-      
-      if (loginData.captcha_key) {
-        errorMessage = "Captcha required - please login through Discord first";
-      } else if (loginData.message) {
-        const msg = loginData.message.toLowerCase();
-        if (msg.includes('invalid') && (msg.includes('email') || msg.includes('phone') || msg.includes('login'))) {
-          errorMessage = "Invalid email or username";
-        } else if (msg.includes('password')) {
-          errorMessage = "Invalid password";
-        } else if (msg.includes('account')) {
-          errorMessage = "Account issue - check your credentials";
-        } else if (msg.includes('rate limit') || msg.includes('too many')) {
-          errorMessage = "Too many attempts - please wait and try again";
-        } else if (msg.includes('mfa') || msg.includes('2fa') || msg.includes('verification')) {
-          errorMessage = "2FA/MFA accounts not supported via credentials";
-        } else {
-          errorMessage = "Login failed - check your credentials";
-        }
-      } else if (loginData.errors) {
-        const errors = loginData.errors;
-        if (errors.login) {
-          errorMessage = "Invalid email or username";
-        } else if (errors.password) {
-          errorMessage = "Invalid password";
-        } else {
-          errorMessage = "Invalid credentials";
-        }
-      } else if (response.status === 401) {
-        errorMessage = "Invalid credentials";
-      } else if (response.status === 429) {
-        errorMessage = "Rate limited - please wait and try again";
-      } else if (response.status >= 500) {
-        errorMessage = "Discord servers are having issues - try again later";
+      if (!mfaResponse.ok || !mfaData.token) {
+        addLog('error', '2FA verification failed', { status: mfaResponse.status, message: mfaData.message });
+        showToast(mfaData.message || "Invalid 2FA code", 1);
+        setIsAddingDynamic(false);
+        return;
       }
       
-      showToast(errorMessage, 1);
-      setIsAddingDynamic(false);
-      return;
+      token = mfaData.token;
+      if (setMfaTicket) setMfaTicket(null);
+      if (setShowMfaDialog) setShowMfaDialog(false);
+      
+    } else {
+      // Initial login
+      addLog('info', 'Starting credential-based account addition', { email: email.trim() });
+      
+      const response = await fetch("https://discord.com/api/v9/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        },
+        body: JSON.stringify({
+          login: email.trim(),
+          password: password.trim()
+        })
+      });
+
+      const loginData = await response.json();
+      
+      // Check if 2FA is required
+      if (loginData.ticket && loginData.mfa) {
+        addLog('info', '2FA required for this account');
+        if (setMfaTicket) setMfaTicket(loginData.ticket);
+        if (setShowMfaDialog) setShowMfaDialog(true);
+        showToast("2FA required - enter your code", 0);
+        setIsAddingDynamic(false);
+        return;
+      }
+      
+      if (!response.ok || !loginData.token) {
+        addLog('error', 'Discord login failed', { 
+          status: response.status, 
+          message: loginData.message,
+          errors: loginData.errors,
+          captchaRequired: !!loginData.captcha_key
+        });
+        
+        let errorMessage = "Login failed";
+        
+        if (loginData.captcha_key) {
+          errorMessage = "Captcha required - please login through Discord first";
+        } else if (loginData.message) {
+          const msg = loginData.message.toLowerCase();
+          if (msg.includes('invalid') && (msg.includes('email') || msg.includes('phone') || msg.includes('login'))) {
+            errorMessage = "Invalid email or username";
+          } else if (msg.includes('password')) {
+            errorMessage = "Invalid password";
+          } else if (msg.includes('account')) {
+            errorMessage = "Account issue - check your credentials";
+          } else if (msg.includes('rate limit') || msg.includes('too many')) {
+            errorMessage = "Too many attempts - please wait and try again";
+          } else {
+            errorMessage = "Login failed - check your credentials";
+          }
+        } else if (loginData.errors) {
+          const errors = loginData.errors;
+          if (errors.login) {
+            errorMessage = "Invalid email or username";
+          } else if (errors.password) {
+            errorMessage = "Invalid password";
+          } else {
+            errorMessage = "Invalid credentials";
+          }
+        } else if (response.status === 401) {
+          errorMessage = "Invalid credentials";
+        } else if (response.status === 429) {
+          errorMessage = "Rate limited - please wait and try again";
+        } else if (response.status >= 500) {
+          errorMessage = "Discord servers are having issues - try again later";
+        }
+        
+        showToast(errorMessage, 1);
+        setIsAddingDynamic(false);
+        return;
+      }
+      
+      token = loginData.token;
     }
 
     addLog('debug', 'Login successful, fetching user info');
     const userResponse = await fetch("https://discord.com/api/v9/users/@me", {
-      headers: { "Authorization": loginData.token }
+      headers: { "Authorization": token }
     });
 
     if (!userResponse.ok) {
@@ -403,7 +448,7 @@ const addAccountWithCredentials = async (storage, email, password, setEmail, set
       discriminator: user.discriminator,
       avatar: user.avatar,
       displayName: user.global_name || user.username,
-      token: loginData.token,
+      token: token,
       addedAt: Date.now()
     };
 

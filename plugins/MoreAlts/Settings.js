@@ -554,6 +554,9 @@ export default function AccountsManager(props) {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [isAddingDynamic, setIsAddingDynamic] = React.useState(false);
+  const [mfaCode, setMfaCode] = React.useState("");
+  const [mfaTicket, setMfaTicket] = React.useState(null);
+  const [showMfaDialog, setShowMfaDialog] = React.useState(false);
 
   const currentUserId = UserStore.getCurrentUser()?.id;
 
@@ -699,7 +702,12 @@ export default function AccountsManager(props) {
   };
 
   const addAccountWithCredentialsHandler = async () => {
-    await addAccountWithCredentials(storage, email, password, setEmail, setPassword, setShowAddDialog, setIsAddingDynamic);
+    await addAccountWithCredentials(storage, email, password, setEmail, setPassword, setShowAddDialog, setIsAddingDynamic, null, null, setMfaTicket, setShowMfaDialog);
+  };
+
+  const submitMfaCode = async () => {
+    await addAccountWithCredentials(storage, email, password, setEmail, setPassword, setShowAddDialog, setIsAddingDynamic, mfaCode, mfaTicket, setMfaTicket, setShowMfaDialog);
+    setMfaCode("");
   };
 
   const formatDate = (timestamp) => {
@@ -719,6 +727,73 @@ export default function AccountsManager(props) {
     return React.createElement(SettingsPage, {
       onBack: () => setShowSettings(false)
     });
+  }
+
+  // 2FA Dialog
+  if (showMfaDialog) {
+    return React.createElement(ReactNative.View, {
+      style: { flex: 1, backgroundColor: '#1a1b1e', justifyContent: 'center', padding: 24 }
+    }, [
+      React.createElement(ReactNative.View, {
+        key: "mfa-card",
+        style: { backgroundColor: '#2b2d31', borderRadius: 16, padding: 24 }
+      }, [
+        React.createElement(ReactNative.Text, {
+          key: "mfa-title",
+          style: { color: 'white', fontSize: 22, fontWeight: '700', textAlign: 'center', marginBottom: 8 }
+        }, "2FA Verification"),
+        React.createElement(ReactNative.Text, {
+          key: "mfa-desc",
+          style: { color: '#8e9297', fontSize: 14, textAlign: 'center', marginBottom: 24 }
+        }, "Enter the 6-digit code from your authenticator app"),
+        React.createElement(ReactNative.TextInput, {
+          key: "mfa-input",
+          placeholder: "000000",
+          placeholderTextColor: '#72767d',
+          value: mfaCode,
+          onChangeText: setMfaCode,
+          keyboardType: 'number-pad',
+          maxLength: 6,
+          style: {
+            backgroundColor: '#1a1b1e',
+            color: 'white',
+            padding: 16,
+            borderRadius: 12,
+            fontSize: 24,
+            textAlign: 'center',
+            letterSpacing: 8,
+            marginBottom: 20,
+            borderWidth: 1,
+            borderColor: '#3f4147'
+          }
+        }),
+        React.createElement(ReactNative.TouchableOpacity, {
+          key: "mfa-submit",
+          onPress: submitMfaCode,
+          disabled: mfaCode.length !== 6 || isAddingDynamic,
+          style: {
+            backgroundColor: mfaCode.length === 6 ? '#5865f2' : '#3f4147',
+            paddingVertical: 14,
+            borderRadius: 12,
+            alignItems: 'center',
+            marginBottom: 12
+          }
+        }, React.createElement(ReactNative.Text, {
+          style: { color: 'white', fontSize: 16, fontWeight: '600' }
+        }, isAddingDynamic ? "Verifying..." : "Verify")),
+        React.createElement(ReactNative.TouchableOpacity, {
+          key: "mfa-cancel",
+          onPress: () => {
+            setShowMfaDialog(false);
+            setMfaTicket(null);
+            setMfaCode("");
+          },
+          style: { paddingVertical: 12, alignItems: 'center' }
+        }, React.createElement(ReactNative.Text, {
+          style: { color: '#da373c', fontSize: 14, fontWeight: '600' }
+        }, "Cancel"))
+      ])
+    ]);
   }
 
   if (showAddDialog) {
