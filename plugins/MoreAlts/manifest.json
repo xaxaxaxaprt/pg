@@ -1,7 +1,7 @@
 {
 	"name": "More Alts!",
 	"description": "Adds ability to safely add more alts to Discord!",
-	"authors": [{ "name": "Win8.1VMUser", "id": "793935599702507542" }],
+	"authors": [{ "name": "xaxaxaxa", "id": "851936318761467974" }],
 	"main": "./index.js",
 	"vendetta": { "icon": "ic_full_server_gating_24px" }
 }
