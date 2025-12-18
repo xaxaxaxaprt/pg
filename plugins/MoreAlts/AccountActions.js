@@ -342,7 +342,9 @@ const addAccountWithCredentials = async (storage, email, password, setEmail, set
         },
         body: JSON.stringify({
           code: cleanCode,
-          ticket: mfaTicket
+          ticket: mfaTicket,
+          gift_code_sku_id: null,
+          login_source: null
         })
       });
 
