@@ -54,7 +54,11 @@ export default function patchStatusPicker() {
                         return opts.some(o => 
                             o?.label === "Set Custom Status" || 
                             o?.label === "Set a custom status" ||
-                            o?.label === "Clear Status"
+                            o?.label === "Clear Status" ||
+                            o?.label === "Özel Durum Belirle" ||
+                            o?.label === "Durumu Temizle" ||
+                            o?.label?.toLowerCase?.()?.includes?.("status") ||
+                            o?.label?.toLowerCase?.()?.includes?.("durum")
                         );
                     });
                 }
@@ -62,10 +66,15 @@ export default function patchStatusPicker() {
                 if (!sheet?.props?.content?.props?.options) return;
 
                 const props = sheet.props.content.props;
-                const label = getAccountCount() > 0 ? "Switch Account" : "Add Account";
+                const label = getAccountCount() > 0 ? "Hesap Değiştir" : "Hesap Ekle";
 
                 // Don't add if already exists
-                if (props.options.some(o => o?.label === "Switch Account" || o?.label === "Add Account")) return;
+                if (props.options.some(o => 
+                    o?.label === "Switch Account" || 
+                    o?.label === "Add Account" ||
+                    o?.label === "Hesap Değiştir" ||
+                    o?.label === "Hesap Ekle"
+                )) return;
 
                 const option = {
                     label: label,
@@ -76,7 +85,9 @@ export default function patchStatusPicker() {
                 // Find "Set Custom Status" and insert after it
                 const idx = props.options.findIndex(o => 
                     o?.label === "Set Custom Status" || 
-                    o?.label === "Set a custom status"
+                    o?.label === "Set a custom status" ||
+                    o?.label === "Özel Durum Belirle" ||
+                    o?.label?.toLowerCase?.()?.includes?.("durum")
                 );
 
                 if (idx !== -1) {

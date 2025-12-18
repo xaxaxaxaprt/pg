@@ -129,6 +129,64 @@ export default {
 		const statusPickerUnpatch = patchStatusPicker();
 		this.patches.push(statusPickerUnpatch);
 
+		// Status picker patch - adds account switch option
+		const statusPickerUnpatch2 = patchBefore("render", findByProps("ScrollView").View, (args) => {
+			try {
+				// Look for any action sheet with options array
+				let sheet = findInReactTree(args, (r) => {
+					if (!r?.props?.content?.props?.options) return false;
+					// Debug: log sheet keys to find the right one
+					if (r?.key) console.log("[MoreAlts] Found sheet key:", r.key, "sheetKey:", r?.props?.sheetKey);
+					return r?.props?.content?.props?.options?.length > 0;
+				});
+
+				if (!sheet?.props?.content?.props?.options) return;
+				
+				const opts = sheet.props.content.props;
+				// Check if this looks like the status picker (has online/idle/dnd/invisible options)
+				const hasStatusOptions = opts.options.some(o => 
+					o?.label?.toLowerCase?.()?.includes?.("online") ||
+					o?.label?.toLowerCase?.()?.includes?.("idle") ||
+					o?.label?.toLowerCase?.()?.includes?.("invisible") ||
+					o?.label?.toLowerCase?.()?.includes?.("çevrimiçi") ||
+					o?.label?.toLowerCase?.()?.includes?.("boşta") ||
+					o?.label?.toLowerCase?.()?.includes?.("görünmez")
+				);
+
+				if (!hasStatusOptions) return;
+
+				const accountCount = Object.keys(storage.accounts || {}).length;
+				const label = accountCount > 0 ? "Hesap Değiştir" : "Hesap Ekle";
+
+				// Don't add if already exists
+				if (opts.options.some(o => o?.label === label)) return;
+
+				opts.options.push({
+					label: label,
+					icon: getAssetIDByName("ic_person_add_24px") || getAssetIDByName("ic_add_friend") || getAssetIDByName("ic_group"),
+					onPress: () => {
+						opts.hideActionSheet?.();
+						setTimeout(() => {
+							try {
+								const nav = bunny?.metro?.findByPropsLazy("getRootNavigationRef")?.getRootNavigationRef();
+								if (nav) {
+									nav.navigate("VendettaCustomPage", {
+										title: "Account Switcher",
+										render: () => React.createElement(AccountSwitcherSettings)
+									});
+								}
+							} catch (e) {
+								showToast("Settings'ten Account Switcher'a git", 0);
+							}
+						}, 100);
+					}
+				});
+			} catch (e) {
+				// Silent
+			}
+		});
+		this.patches.push(statusPickerUnpatch2);
+
 		// Context menu patch for copying tokens
 		const optionLabel = "Copy Token";
 		const contextMenuUnpatch = patchBefore("render", findByProps("ScrollView").View, (args) => {
