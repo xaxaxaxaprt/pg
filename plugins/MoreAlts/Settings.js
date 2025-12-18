@@ -121,17 +121,16 @@ function SettingsPage({ onBack }) {
   }
 
   return React.createElement(ReactNative.View, { 
-    style: { flex: 1, backgroundColor: '#2f3136' } 
+    style: { flex: 1, backgroundColor: '#1a1b1e' } 
   }, [
     React.createElement(ReactNative.View, {
       key: "header",
       style: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#202225',
-        borderBottomWidth: 1,
-        borderBottomColor: '#40444b'
+        padding: 20,
+        backgroundColor: '#111214',
+        borderBottomWidth: 0
       }
     }, [
       React.createElement(ReactNative.TouchableOpacity, {
@@ -139,8 +138,8 @@ function SettingsPage({ onBack }) {
         onPress: onBack,
         style: { marginRight: 16 }
       }, React.createElement(ReactNative.Text, {
-        style: { color: '#7289da', fontSize: 16 }
-      }, "← Back to Accounts")),
+        style: { color: '#5865f2', fontSize: 15, fontWeight: '600' }
+      }, "← Back")),
       React.createElement(ReactNative.Text, {
         key: "title",
         style: { color: 'white', fontSize: 18, fontWeight: 'bold' }
@@ -158,22 +157,22 @@ function SettingsPage({ onBack }) {
       }, [
         React.createElement(ReactNative.Text, {
           key: "export-title",
-          style: { color: '#b9bbbe', fontSize: 14, fontWeight: 'bold', marginBottom: 12 }
+          style: { color: '#8e9297', fontSize: 12, fontWeight: '700', marginBottom: 16, letterSpacing: 0.5 }
         }, "BACKUP & RESTORE"),
         
         React.createElement(ReactNative.TouchableOpacity, {
           key: "export-btn",
           onPress: () => exportAccounts(storage, setShowPasswordDialog),
           style: {
-            backgroundColor: '#7289da',
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            borderRadius: 8,
+            backgroundColor: '#5865f2',
+            paddingVertical: 14,
+            paddingHorizontal: 20,
+            borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center'
           }
         }, React.createElement(ReactNative.Text, {
-          style: { color: 'white', fontSize: 16, fontWeight: 'bold' }
+          style: { color: 'white', fontSize: 15, fontWeight: '600' }
         }, "Export Accounts")),
 
         React.createElement(ReactNative.TextInput, {
@@ -185,13 +184,15 @@ function SettingsPage({ onBack }) {
           multiline: true,
           numberOfLines: 4,
           style: {
-            backgroundColor: '#40444b',
+            backgroundColor: '#2b2d31',
             color: 'white',
-            padding: 12,
-            borderRadius: 8,
+            padding: 14,
+            borderRadius: 12,
             marginBottom: 12,
             fontSize: 14,
-            textAlignVertical: 'top'
+            textAlignVertical: 'top',
+            borderWidth: 1,
+            borderColor: '#3f4147'
           }
         }),
         
@@ -199,29 +200,29 @@ function SettingsPage({ onBack }) {
           key: "import-btn",
           onPress: () => importAccounts(storage, setShowPasswordDialog, importText),
           style: {
-            backgroundColor: '#43b581',
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            borderRadius: 8,
+            backgroundColor: '#248046',
+            paddingVertical: 14,
+            paddingHorizontal: 20,
+            borderRadius: 12,
             marginBottom: 12,
             alignItems: 'center'
           }
         }, React.createElement(ReactNative.Text, {
-          style: { color: 'white', fontSize: 16, fontWeight: 'bold' }
+          style: { color: 'white', fontSize: 15, fontWeight: '600' }
         }, "Import Accounts")),
 
         React.createElement(ReactNative.TouchableOpacity, {
           key: "force-logout-btn",
           onPress: forceLogout,
           style: {
-            backgroundColor: '#f04747',
-            paddingVertical: 12,
-            paddingHorizontal: 16,
-            borderRadius: 8,
+            backgroundColor: '#da373c',
+            paddingVertical: 14,
+            paddingHorizontal: 20,
+            borderRadius: 12,
             alignItems: 'center'
           }
         }, React.createElement(ReactNative.Text, {
-          style: { color: 'white', fontSize: 16, fontWeight: 'bold' }
+          style: { color: 'white', fontSize: 15, fontWeight: '600' }
         }, "Force Logout"))
       ]),
 
@@ -231,7 +232,7 @@ function SettingsPage({ onBack }) {
       }, [
         React.createElement(ReactNative.Text, {
           key: "password-title",
-          style: { color: '#b9bbbe', fontSize: 14, fontWeight: 'bold', marginBottom: 12 }
+          style: { color: '#8e9297', fontSize: 12, fontWeight: '700', marginBottom: 16, letterSpacing: 0.5 }
         }, "EXPORT PASSWORD PROTECTION"),
         
         storage.settings.exportPasswordHash 
@@ -316,7 +317,7 @@ function SettingsPage({ onBack }) {
       }, [
         React.createElement(ReactNative.Text, {
           key: "unsafe-title",
-          style: { color: '#f04747', fontSize: 14, fontWeight: 'bold', marginBottom: 12 }
+          style: { color: '#da373c', fontSize: 12, fontWeight: '700', marginBottom: 16, letterSpacing: 0.5 }
         }, "UNSAFE FEATURES"),
         
         React.createElement(ReactNative.View, {
@@ -326,9 +327,9 @@ function SettingsPage({ onBack }) {
             justifyContent: 'space-between', 
             alignItems: 'center', 
             paddingVertical: 12,
-            backgroundColor: '#36393f',
+            backgroundColor: '#2b2d31',
             paddingHorizontal: 16,
-            borderRadius: 8,
+            borderRadius: 12,
             marginBottom: 8
           }
         }, [
@@ -454,9 +455,9 @@ function SettingsPage({ onBack }) {
             justifyContent: 'space-between', 
             alignItems: 'center', 
             paddingVertical: 12,
-            backgroundColor: '#36393f',
+            backgroundColor: '#2b2d31',
             paddingHorizontal: 16,
-            borderRadius: 8,
+            borderRadius: 12,
             marginBottom: 8
           }
         }, [
@@ -480,9 +481,9 @@ function SettingsPage({ onBack }) {
             justifyContent: 'space-between', 
             alignItems: 'center', 
             paddingVertical: 12,
-            backgroundColor: '#36393f',
+            backgroundColor: '#2b2d31',
             paddingHorizontal: 16,
-            borderRadius: 8,
+            borderRadius: 12,
             marginBottom: 8
           }
         }, [
@@ -722,7 +723,7 @@ export default function AccountsManager(props) {
 
   if (showAddDialog) {
     return React.createElement(ReactNative.View, {
-      style: { flex: 1, backgroundColor: '#2f3136' }
+      style: { flex: 1, backgroundColor: '#1a1b1e' }
     }, [
       React.createElement(ReactNative.View, {
         key: "add-header",
@@ -843,7 +844,7 @@ export default function AccountsManager(props) {
   }
 
   return React.createElement(ReactNative.View, {
-    style: { flex: 1, backgroundColor: '#2f3136' }
+    style: { flex: 1, backgroundColor: '#1a1b1e' }
   }, [
     React.createElement(ReactNative.View, {
       key: "header",
@@ -851,26 +852,26 @@ export default function AccountsManager(props) {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
-        backgroundColor: '#202225',
-        borderBottomWidth: 1,
-        borderBottomColor: '#40444b'
+        padding: 20,
+        backgroundColor: '#111214',
+        borderBottomWidth: 0
       }
     }, [
       React.createElement(ReactNative.Text, {
         key: "title",
-        style: { color: 'white', fontSize: 20, fontWeight: 'bold' }
+        style: { color: 'white', fontSize: 22, fontWeight: '700' }
       }, "Account Switcher"),
       React.createElement(ReactNative.TouchableOpacity, {
         key: "settings-btn",
         onPress: () => setShowSettings(true),
         style: {
-          padding: 8,
-          borderRadius: 6,
-          backgroundColor: '#4f545c'
+          paddingVertical: 10,
+          paddingHorizontal: 16,
+          borderRadius: 10,
+          backgroundColor: '#2b2d31'
         }
       }, React.createElement(ReactNative.Text, {
-        style: { color: 'white', fontSize: 18 }
+        style: { color: '#b5bac1', fontSize: 14, fontWeight: '600' }
       }, "Settings"))
     ]),
 
@@ -880,7 +881,7 @@ export default function AccountsManager(props) {
     }, [
       React.createElement(ReactNative.Text, {
         key: "section-title",
-        style: { color: '#b9bbbe', fontSize: 14, fontWeight: 'bold', marginBottom: 12 }
+        style: { color: '#8e9297', fontSize: 12, fontWeight: '700', marginBottom: 16, letterSpacing: 0.5 }
       }, `SAVED ACCOUNTS (${orderedAccounts.length})`),
 
       orderedAccounts.length === 0 
@@ -919,11 +920,11 @@ export default function AccountsManager(props) {
               style: {
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: isCurrent ? '#7289da20' : '#36393f',
-                borderWidth: isCurrent ? 2 : 0,
-                borderColor: '#7289da',
-                borderRadius: 12,
-                padding: 12,
+                backgroundColor: isCurrent ? '#5865f215' : '#2b2d31',
+                borderWidth: isCurrent ? 1 : 0,
+                borderColor: '#5865f2',
+                borderRadius: 16,
+                padding: 14,
                 marginBottom: 12
               }
             }, [
@@ -978,10 +979,10 @@ export default function AccountsManager(props) {
                   key: "copy",
                   onPress: () => copyToken(account.id),
                   style: {
-                    backgroundColor: '#4f545c',
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 6,
+                    backgroundColor: '#3f4147',
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 8,
                     minWidth: 80,
                     alignItems: 'center',
                     marginBottom: 6
@@ -994,10 +995,10 @@ export default function AccountsManager(props) {
                   key: "remove",
                   onPress: () => removeAccount(account.id),
                   style: {
-                    backgroundColor: '#f04747',
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 6,
+                    backgroundColor: '#da373c',
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    borderRadius: 8,
                     minWidth: 80,
                     alignItems: 'center'
                   }
@@ -1016,21 +1017,20 @@ export default function AccountsManager(props) {
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: '#202225',
-        borderTopWidth: 1,
-        borderTopColor: '#40444b',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        backgroundColor: '#111214',
+        borderTopWidth: 0,
+        paddingVertical: 16,
+        paddingHorizontal: 20,
         paddingBottom: 40
       }
     }, React.createElement(ReactNative.TouchableOpacity, {
       key: "add",
       onPress: () => setShowAddDialog(true),
       style: {
-        backgroundColor: '#7289da',
+        backgroundColor: '#5865f2',
         paddingVertical: 16,
-        paddingHorizontal: 20,
-        borderRadius: 8,
+        paddingHorizontal: 24,
+        borderRadius: 14,
         alignItems: 'center',
         flexDirection: 'row',
         justifyContent: 'center'
