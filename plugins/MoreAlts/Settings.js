@@ -629,12 +629,54 @@ export default function AccountsManager(props) {
     }
   };
 
+  const refreshAccountInfo = async (accountId) => {
+    const account = storage.accounts[accountId];
+    if (!account) return false;
+    
+    try {
+      const response = await fetch("https://discord.com/api/v9/users/@me", {
+        headers: { "Authorization": account.token }
+      });
+      
+      if (!response.ok) {
+        addLog('warn', 'Token invalid for account', { username: account.username, status: response.status });
+        return false;
+      }
+      
+      const userData = await response.json();
+      
+      // Update stored account info
+      storage.accounts[accountId] = {
+        ...account,
+        username: userData.username,
+        discriminator: userData.discriminator,
+        avatar: userData.avatar,
+        displayName: userData.global_name || userData.username
+      };
+      
+      addLog('info', 'Account info refreshed', { username: userData.username });
+      return true;
+    } catch (e) {
+      addLog('error', 'Failed to refresh account info', { error: e.message });
+      return false;
+    }
+  };
+
   const switchToAccount = async (accountId) => {
     const account = storage.accounts[accountId];
     if (!account) return;
     setSwitchingTo(accountId);
     
     addLog('info', 'Starting account switch', { username: account.username });
+    
+    // Validate token first
+    const isValid = await refreshAccountInfo(accountId);
+    if (!isValid) {
+      addLog('error', 'Token invalid, cannot switch', { username: account.username });
+      showToast(`Token for ${account.username} is invalid! Re-add the account.`, 1);
+      setSwitchingTo(null);
+      return;
+    }
     
     try {
       showToast(`Switching to ${account.username}...`, 0);
@@ -987,7 +1029,7 @@ export default function AccountsManager(props) {
             
             let avatarUrl = `https://cdn.discordapp.com/embed/avatars/1.png`;
             if (account.avatar) {
-              avatarUrl = `https://cdn.discordapp.com/avatars/${account.id}/${account.avatar}.png?size=48`;
+              avatarUrl = `https://cdn.discordapp.com/avatars/${account.id}/${account.avatar}.png?size=128&_=${Date.now()}`;
             }
 
             return React.createElement(ReactNative.View, {
