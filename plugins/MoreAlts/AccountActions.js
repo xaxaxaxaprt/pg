@@ -7,6 +7,8 @@ import { simpleHash } from "./PasswordUtils.js";
 
 const UserStore = findByStoreName("UserStore");
 const TokenManager = findByProps("getToken");
+const AuthModule = findByProps("login", "logout", "loginMFA");
+const HTTPModule = findByProps("post", "get", "patch");
 
 const exportAccounts = async (storage, showPasswordDialog) => {
   const checkPassword = (callback) => {
@@ -325,41 +327,64 @@ const addAccountWithCredentials = async (storage, email, password, setEmail, set
       
       // Determine if this is a backup code (8 chars) or TOTP (6 chars)
       const isBackupCode = cleanCode.length === 8;
-      const endpoint = isBackupCode 
-        ? "https://discord.com/api/v9/auth/mfa/backup" 
-        : "https://discord.com/api/v9/auth/mfa/totp";
+      const mfaEndpoint = isBackupCode ? "/auth/mfa/backup" : "/auth/mfa/totp";
       
       addLog('debug', 'MFA request details', { 
         endpoint: isBackupCode ? 'backup' : 'totp',
         codeToSend: cleanCode
       });
 
-      const mfaResponse = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        },
-        body: JSON.stringify({
-          code: cleanCode,
-          ticket: mfaTicket,
-          gift_code_sku_id: null,
-          login_source: null
-        })
-      });
-
-      const mfaData = await mfaResponse.json();
-      addLog('debug', '2FA response', { status: mfaResponse.status, hasToken: !!mfaData.token, message: mfaData.message });
+      let mfaData;
       
-      if (!mfaResponse.ok || !mfaData.token) {
-        addLog('error', '2FA verification failed', { status: mfaResponse.status, message: mfaData.message, code: mfaData.code });
+      // Try using Discord's internal HTTP module first
+      if (HTTPModule?.post) {
+        try {
+          addLog('debug', 'Using Discord internal HTTP module');
+          const response = await HTTPModule.post({
+            url: mfaEndpoint,
+            body: {
+              code: cleanCode,
+              ticket: mfaTicket,
+              gift_code_sku_id: null,
+              login_source: null
+            }
+          });
+          mfaData = response.body;
+          addLog('debug', '2FA response (internal)', { hasToken: !!mfaData?.token, status: response.status });
+        } catch (e) {
+          addLog('debug', 'Internal HTTP failed, trying fetch', { error: e.message });
+          mfaData = null;
+        }
+      }
+      
+      // Fallback to fetch if internal module fails
+      if (!mfaData?.token) {
+        const mfaResponse = await fetch(`https://discord.com/api/v9${mfaEndpoint}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          },
+          body: JSON.stringify({
+            code: cleanCode,
+            ticket: mfaTicket,
+            gift_code_sku_id: null,
+            login_source: null
+          })
+        });
+        mfaData = await mfaResponse.json();
+        addLog('debug', '2FA response (fetch)', { status: mfaResponse.status, hasToken: !!mfaData.token, message: mfaData.message });
+      }
+      
+      if (!mfaData?.token) {
+        addLog('error', '2FA verification failed', { message: mfaData?.message, code: mfaData?.code });
         
         let errorMsg = "Invalid 2FA code";
-        if (mfaData.message) {
+        if (mfaData?.message) {
           errorMsg = mfaData.message;
-        } else if (mfaData.code === 60008) {
-          errorMsg = "Invalid 2FA code - check your authenticator";
-        } else if (mfaData.code === 60002) {
+        } else if (mfaData?.code === 60008) {
+          errorMsg = "Invalid 2FA code - check your authenticator time sync";
+        } else if (mfaData?.code === 60002) {
           errorMsg = "2FA ticket expired - try again";
         }
         
@@ -394,7 +419,14 @@ const addAccountWithCredentials = async (storage, email, password, setEmail, set
       
       // Check if 2FA is required
       if (loginData.ticket && loginData.mfa) {
-        addLog('info', '2FA required for this account');
+        addLog('info', '2FA required for this account', {
+          ticket: loginData.ticket,
+          mfa: loginData.mfa,
+          sms: loginData.sms,
+          backup: loginData.backup,
+          totp: loginData.totp,
+          webauthn: loginData.webauthn
+        });
         if (setMfaTicket) setMfaTicket(loginData.ticket);
         if (setShowMfaDialog) setShowMfaDialog(true);
         showToast("2FA required - enter your code", 0);
